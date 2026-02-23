@@ -120,7 +120,7 @@ const GroupParticipantsPanel = ({ participants, isOpen, onClose, copied, copyLin
       {/* Footer — Invite button */}
       <div className="flex-shrink-0 px-3 py-3 border-t border-gray-700/50">
         <button
-          onClick={copyLink}
+          onClick={() => copyLink()}
           aria-label="Copy invite link"
           className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl
             text-sm font-semibold transition-all duration-200
