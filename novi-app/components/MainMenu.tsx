@@ -10,7 +10,6 @@ import { Input } from "./ui/input"
 import DatePicker from "react-datepicker"
 import { useUser } from "@clerk/nextjs"
 import Loading from "./Loading"
-import { useStreamVideoClient } from "@stream-io/video-react-sdk"
 import { toast } from "sonner"
 
 const initialValues = {
@@ -20,93 +19,6 @@ const initialValues = {
   };
 
 const MainMenu = () => {
-  const {user} = useUser() // Gets the currently logged-in user
-    const router = useRouter(); // Router instance for navigation
-    const [values, setValues] = useState(initialValues); // State holding meeting form values
-    const [meetingState, setMeetingState] = useState< 'Schedule' | 'Instant' | undefined>(undefined); // Tracks whether user wants an instant or scheduled meeting
-    const client = useStreamVideoClient();  // Stream Video client instance
-
-    // Function to create a new meeting
-    const createMeeting = async() => {
-        if(!user) return router.push('/login')
-        if(!client) return router.push('/')
-    
-        try {
-            // Validate date/time input
-            if (!values.dateTime) {
-              toast('Please select a date and time',{
-              duration: 3000,
-              className: 'bg-gray-300 rounded-3xl py-8 px-5 justify-center'
-              });
-              return;
-            }
-
-            const id = crypto.randomUUID(); // Generate a unique meeting ID
-            const call = client.call('default', id); // Create a Stream call object
-            if (!call) throw new Error('Failed to create meeting');
-
-            const startsAt =
-            values.dateTime.toISOString() || new Date(Date.now()).toISOString();  // Meeting start time (ISO format)
-            const description = values.description || 'No Description'; // Fallback description
-            
-            await call.getOrCreate({
-              // Create or fetch the call from Stream
-              data: {
-                starts_at: startsAt,
-                // Scheduled start time
-                  custom: {
-                      description,
-                      // Custom metadata for the call
-                  },
-              },
-            });
-
-            await call.updateCallMembers({
-              // Add the current user to the call
-              update_members: [{ user_id: user.id }],
-            })
-
-            if (meetingState === 'Instant') {
-              // Instant meeting flow
-
-                router.push(`/meeting/${call.id}`); // Navigate to meeting room
-                toast('Setting up your meeting',{
-                    duration: 3000,
-                    className: '!bg-gray-300 !rounded-3xl !py-8 !px-5 !justify-center',
-                });
-            }
-            
-            if (meetingState === 'Schedule') {
-              // Scheduled meeting flow
-
-                router.push('/upcoming'); // Navigate to upcoming meetings page
-                toast(`Your meeting is scheduled at ${values.dateTime}`,{
-                    duration: 5000,
-                    className: '!bg-gray-300 !rounded-3xl !py-8 !px-5 !justify-center',
-                });
-            }
-
-        } catch(error:any) {
-          // Error handling
-
-            toast(`Failed to create Meeting ${error.message}`,{
-                duration: 3000,
-                className: '!bg-gray-300 !rounded-3xl !py-8 !px-5 !justify-center',
-            })
-        }
-
-    }
-
-    useEffect(() => {
-      // Runs whenever meetingState changes
-
-      if (meetingState) {
-        createMeeting(); // Automatically create meeting once state is set
-      }
-    }, [meetingState]);
-
-    if (!client || !user) return <Loading />;
-
     return (
       <section className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
         <Dialog >

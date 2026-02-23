@@ -1,5 +1,3 @@
-import StreamProvider from "@/providers/StreamProvider"
-import { SignIn } from "@clerk/nextjs"
 import { currentUser } from "@clerk/nextjs/server"
 import { neobrutalism } from "@clerk/themes"
 import Image from "next/image"
@@ -50,9 +48,9 @@ const MainLayout = async ({
 
     return (
         <main className="animate-fade-in">
-            <StreamProvider>
+            
                 {children}
-            </StreamProvider>
+            
 
         </main>
 
