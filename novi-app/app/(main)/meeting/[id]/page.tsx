@@ -1,47 +1,60 @@
 'use client'
 
-import Alert from "@/components/Alert";
+import GroupMeetingRoom from "@/components/grp-components/Grp-MeetingRoom";
+import GroupMeetingSetup from "@/components/grp-components/Grp-MeetingSetup";
 import Loading from "@/components/Loading";
-import MeetingRoom from "@/components/MeetingRoom";
-import MeetingSetup from "@/components/MeetingSetup";
-import { useGetCallById } from "@/hooks/useGetCallById";
 import { useUser } from "@clerk/nextjs";
-import { StreamCall, StreamTheme } from "@stream-io/video-react-sdk";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const MeetingPage = () => {
-    const {id} = useParams<{ id: string}>();
-     if(!id) return
-    const { isLoaded, user } = useUser();
-    const { call, isCallLoading } = useGetCallById(id);
-    const [isSetupComplete, setIsSetupComplete] = useState(false);
+    const { id } = useParams<{ id: string }>()
+    const { isLoaded, user } = useUser()
 
-    if (!isLoaded || isCallLoading) return <Loading/>;
+    const [isSetupComplete, setIsSetupComplete] = useState(false)
+    const [cameraOn, setCameraOn] = useState(true)
+    const [micOn, setMicOn] = useState(true)
+    const [isHost, setIsHost] = useState(false)
+    const [description, setDescription] = useState('')
 
-    if (!call) return (
-        <p className="text-center text-3xl font-bold text-white">
-          Call Not Found
+    useEffect(() => {
+        if (!id || !user) return
+        // Check if the current user created this meeting (host)
+        const hostId = sessionStorage.getItem(`meeting_${id}_host`)
+        const desc = sessionStorage.getItem(`meeting_${id}_description`) ?? ''
+        setIsHost(hostId === user.id)
+        setDescription(desc)
+    }, [id, user])
+
+    if (!isLoaded) return <Loading />
+
+    if (!id) return (
+        <p className="text-center text-3xl font-bold text-white mt-20">
+            Invalid meeting link
         </p>
-    );
+    )
 
-    const notAllowed = call.type === 'invited' && (!user || !call.state.members.find
-        ((m) => m.user.id === user.id));
-
-    if (notAllowed) return <Alert title="You are not allowed to join this meeting" />;
+    const handleJoin = (camOn: boolean, micOn: boolean) => {
+        setCameraOn(camOn)
+        setMicOn(micOn)
+        setIsSetupComplete(true)
+    }
 
     return (
         <main className="h-screen w-full">
-            <StreamCall call={call}>
-                <StreamTheme>
-        
-                {!isSetupComplete ? (
-                    <MeetingSetup setIsSetupComplete={setIsSetupComplete} />
-                ) : (
-                    <MeetingRoom/>
-                )}
-                </StreamTheme>
-            </StreamCall>
+            {!isSetupComplete ? (
+                <GroupMeetingSetup
+                    onJoin={handleJoin}
+                    description={description}
+                />
+            ) : (
+                <GroupMeetingRoom
+                    initialCameraOn={cameraOn}
+                    initialMicOn={micOn}
+                    isHost={isHost}
+                    description={description}
+                />
+            )}
       </main>
     )
 }
